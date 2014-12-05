@@ -1,6 +1,6 @@
 # Ember Validations #
 
-[![Build Status](https://secure.travis-ci.org/dockyard/ember-validations.svg?branch=master)](http://travis-ci.org/dockyard/ember-validations)
+[![Build Status](https://secure.travis-ci.org/dockyard/ember-validations.png?branch=master)](http://travis-ci.org/dockyard/ember-validations)
 
 ## Building yourself ##
 
@@ -242,14 +242,11 @@ The value of the conditional can be an inline function, a string that
 represents a property on the object, or a string that represents a
 function on the object. The result should be a boolean.
 
-**note that `if` is considered a keyword in IE8 and so you should put it
-in quotes**
-
 ```javascript
 // function form
 firstName: {
   presence: {
-    'if': function(object, validator) {
+    if: function(object, validator) {
       return true;
     }
   }
@@ -289,7 +286,7 @@ in `local/` or `remote/` has a higher lookup presedence over those in
 The "native" validators that come with `ember-validations` have the
 lowest lookup priority.
 
-### Without Ember-CLI ###
+### Withoug Ember-CLI ###
 
 You can add your validators to the global object:
 
@@ -314,7 +311,7 @@ import Base from 'ember-validations/validators/base';
 
 export default Base.extend({
   call: function() {
-    if (Ember.isBlank(this.model.get(this.property))) {
+    if (Ember.isBlank(this.model.get(this.property)) {
       this.errors.pushObject("cannot be blank");
     }
   }
@@ -331,12 +328,12 @@ import Base from 'ember-validations/validators/base';
 export default Base.extend({
   init: function() {
     // this call is necessary, don't forget it!
-    this._super();
+    this.super();
 
     this.dependentValidationKeys.pushObject(this.options.alsoWatch);
   },
   call: function() {
-    if (Ember.isBlank(this.model.get(this.property))) {
+    if (Ember.isBlank(this.model.get(this.property)) {
       this.errors.pushObject("cannot be blank");
     }
   }
@@ -397,21 +394,14 @@ direct parent's validation state. `isInvalid` is also available for convenience.
 If you want to force all validations to run simply call `.validate()` on the object. `isValid` will be set to `true`
 or `false`. All validations are run as deferred objects, so the validations will
 not be completed when `validate` is done. So `validate` returns a promise, call `then`
-with a function containing the code you want to run after the validations have successfully
+with a function containing the code you want to run after the validations have
 completed.
 
 ```javascript
 user.validate().then(function() {
-  // all validations pass
   user.get('isValid'); // true
-}).catch(function() {
-  // any validations fail
-  user.get('isValid'); // false
-}).finally(function() {
-  // all validations complete
-  // regardless of isValid state
- user.get('isValid'); // true || false 
-});
+  user.get('isInvalid'); // false
+})
 ```
 
 ## Inspecting Errors ##
@@ -422,7 +412,7 @@ for the corresponding property. Errors messages will always be an array.
 
 ```javascript
 import Ember from 'ember';
-import EmberValidations from 'ember-validations';
+import EmberValidations from 'ember-validatinos';
 
 export default Ember.Object.extend(EmberValidations.Mixin, {
   validations: {
@@ -446,32 +436,6 @@ user.validate().then(null, function() {
 })
 
 ```
-
-## Testing ##
-
-#### With Ember QUnit ####
-
-For Ember Validations to work with [Ember QUnit](https://github.com/rwjblue/ember-qunit),
-you must define all your validations in the `needs` property of the `moduleFor`
-call. This will ensure Ember QUnit's isolated container will be able to locate
-the validations during testing.
-
-```javascript
-import { test, moduleFor } from 'ember-qunit';
-
-moduleFor('controller:user/edit', 'UserEditController', {
-  needs: ['ember-validations@validator:local/presence',
-          'ember-validations@validator:local/length',
-          'validator:local/name',
-          'validator:local/email'
-          ]
-});
-
-test('Controller Test', function() { ... });
-```
-
-Where `UserEditController` uses the built-in `presence` and `length` validators,
-and the locally defined `name` and `email` validators.
 
 ## i18n ##
 

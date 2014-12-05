@@ -30,37 +30,21 @@ var pushValidatableObject = function(model, property) {
 
 var lookupValidator = function(validatorName) {
   var container = get(this, 'container');
-  var service = container.lookup('service:validations');
-  var cache = get(service, 'cache');
-  var validators = [];
+  var local = container.lookupFactory('validator:local/'+validatorName);
+  var remote = container.lookupFactory('validator:remote/'+validatorName);
 
-  if (cache[validatorName]) {
-    validators = validators.concat(cache[validatorName]);
-  } else {
-    var local = container.lookupFactory('validator:local/'+validatorName);
-    var remote = container.lookupFactory('validator:remote/'+validatorName);
+  if (local || remote) { return [local, remote]; }
 
-    if (local || remote) { validators = validators.concat([local, remote]); }
-    else {
-      var base = container.lookupFactory('validator:'+validatorName);
+  var base = container.lookupFactory('validator:'+validatorName);
 
-      if (base) { validators = validators.concat([base]); }
-      else {
-        local = container.lookupFactory('ember-validations@validator:local/'+validatorName);
-        remote = container.lookupFactory('ember-validations@validator:remote/'+validatorName);
+  if (base) { return [base]; }
 
-        if (local || remote) { validators = validators.concat([local, remote]); }
-      }
-    }
+  local = container.lookupFactory('ember-validations@validator:local/'+validatorName);
+  remote = container.lookupFactory('ember-validations@validator:remote/'+validatorName);
 
-    cache[validatorName] = validators;
-  }
+  if (local || remote) { return [local, remote]; }
 
-  if (Ember.isEmpty(validators)) {
-    Ember.warn('Could not find the "'+validatorName+'" validator.');
-  }
-
-  return validators;
+  Ember.warn('Could not the "'+validatorName+'" validator.');
 };
 
 var ArrayValidatorProxy = Ember.ArrayProxy.extend(setValidityMixin, {
@@ -109,8 +93,21 @@ export default Ember.Mixin.create(setValidityMixin, {
   },
   buildRuleValidator: function(property) {
     var pushValidator = function(validator) {
+
+      var parentController = this.get('parentController');
+      while(parentController) {
+        if(parentController.get('parentController')) {
+          parentController = parentController.get('parentController');
+        }
+        break;
+      }
+
       if (validator) {
-        this.validators.pushObject(validator.create({model: this, property: property, options: this.validations[property][validatorName]}));
+        var pushObj = validator.create({model: this, property: property, options: this.validations[property][validatorName]});
+        this.validators.pushObject(pushObj);
+        if(parentController) {
+          parentController.validators.pushObject(pushObj);
+        }
       }
     };
 
