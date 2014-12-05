@@ -156,5 +156,21 @@ export default Ember.Mixin.create(setValidityMixin, {
   _validate: Ember.on('init', function() {
     var promises = this.validators.invoke('_validate').without(undefined);
     return Ember.RSVP.all(promises);
-  })
+  }),
+  willDestroy: function() {
+    var self = this;
+
+    var parentController = this.get('parentController');
+    while(parentController) {
+      if(parentController.get('parentController')) {
+        parentController = parentController.get('parentController');
+      }
+      break;
+    }
+
+    this.get('validators').forEach(function(item){
+      parentController.get('validators').removeObject(item);
+    });
+
+  }
 });
