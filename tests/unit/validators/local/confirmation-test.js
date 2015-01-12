@@ -45,6 +45,22 @@ test('when values do not match', function() {
   deepEqual(validator.errors, ['failed validation']);
 });
 
+test('when original is null', function() {
+  Ember.run(function() {
+    validator = Confirmation.create({model: model, property: 'attribute'});
+    model.set('attribute', null);
+  });
+  ok(Ember.isEmpty(validator.errors));
+});
+
+test('when confirmation is null', function() {
+  Ember.run(function() {
+    validator = Confirmation.create({model: model, property: 'attribute'});
+    model.set('attributeConfirmation', null);
+  });
+  ok(Ember.isEmpty(validator.errors));
+});
+
 test('when options is true', function() {
   options = true;
   Ember.run(function() {

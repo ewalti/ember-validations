@@ -30,21 +30,37 @@ var pushValidatableObject = function(model, property) {
 
 var lookupValidator = function(validatorName) {
   var container = get(this, 'container');
-  var local = container.lookupFactory('validator:local/'+validatorName);
-  var remote = container.lookupFactory('validator:remote/'+validatorName);
+  var service = container.lookup('service:validations');
+  var cache = get(service, 'cache');
+  var validators = [];
 
-  if (local || remote) { return [local, remote]; }
+  if (cache[validatorName]) {
+    validators = validators.concat(cache[validatorName]);
+  } else {
+    var local = container.lookupFactory('validator:local/'+validatorName);
+    var remote = container.lookupFactory('validator:remote/'+validatorName);
 
-  var base = container.lookupFactory('validator:'+validatorName);
+    if (local || remote) { validators = validators.concat([local, remote]); }
+    else {
+      var base = container.lookupFactory('validator:'+validatorName);
 
-  if (base) { return [base]; }
+      if (base) { validators = validators.concat([base]); }
+      else {
+        local = container.lookupFactory('ember-validations@validator:local/'+validatorName);
+        remote = container.lookupFactory('ember-validations@validator:remote/'+validatorName);
 
-  local = container.lookupFactory('ember-validations@validator:local/'+validatorName);
-  remote = container.lookupFactory('ember-validations@validator:remote/'+validatorName);
+        if (local || remote) { validators = validators.concat([local, remote]); }
+      }
+    }
 
-  if (local || remote) { return [local, remote]; }
+    cache[validatorName] = validators;
+  }
 
-  Ember.warn('Could not the "'+validatorName+'" validator.');
+  if (Ember.isEmpty(validators)) {
+    Ember.warn('Could not find the "'+validatorName+'" validator.');
+  }
+
+  return validators;
 };
 
 var ArrayValidatorProxy = Ember.ArrayProxy.extend(setValidityMixin, {
@@ -94,6 +110,7 @@ export default Ember.Mixin.create(setValidityMixin, {
   buildRuleValidator: function(property) {
     var pushValidator = function(validator) {
 
+      /**/
       var parentController = this.get('parentController');
       while(parentController) {
         if(parentController.get('parentController')) {
@@ -101,6 +118,7 @@ export default Ember.Mixin.create(setValidityMixin, {
         }
         break;
       }
+      /**/
 
       if (validator) {
         var pushObj = validator.create({model: this, property: property, options: this.validations[property][validatorName]});
@@ -108,6 +126,7 @@ export default Ember.Mixin.create(setValidityMixin, {
         if(parentController) {
           parentController.validators.pushObject(pushObj);
         }
+        // this.validators.pushObject(validator.create({model: this, property: property, options: this.validations[property][validatorName]}));
       }
     };
 
@@ -156,21 +175,5 @@ export default Ember.Mixin.create(setValidityMixin, {
   _validate: Ember.on('init', function() {
     var promises = this.validators.invoke('_validate').without(undefined);
     return Ember.RSVP.all(promises);
-  }),
-  willDestroy: function() {
-    var self = this;
-
-    var parentController = this.get('parentController');
-    while(parentController) {
-      if(parentController.get('parentController')) {
-        parentController = parentController.get('parentController');
-      }
-      break;
-    }
-
-    this.get('validators').forEach(function(item){
-      parentController.get('validators').removeObject(item);
-    });
-
-  }
+  })
 });

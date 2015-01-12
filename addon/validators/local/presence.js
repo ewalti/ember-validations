@@ -15,8 +15,6 @@ export default Base.extend({
     if (this.options.message === undefined) {
       this.options.message = Messages.render('blank', this.options);
     }
-    // fire on length change
-    this.model.addObserver(this.property + '.length', this, this._validate);
   },
   call: function() {
     if (Ember.isBlank(get(this.model, this.property))) {
