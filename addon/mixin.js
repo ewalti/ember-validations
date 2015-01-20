@@ -129,26 +129,22 @@ export default Ember.Mixin.create(setValidityMixin, {
 
           // destroy validators when the model is destroyed. destroyRecord() required for this.
           this.get('model').addObserver('isDeleted', this, function(){
+            console.log('isDeleted');
             this.validators.forEach(function(validator){
               parentController.get('validators').removeObject(validator);
             });
           });
 
-          // add observer for the newly pushed validators to the parentController
-          parentController.validators.forEach(function(validator) {
-            if(!validator.hasObserverFor('errors.[]')) {
-              console.log(validator.toString());
-              validator.addObserver('errors.[]', this, function(sender) {
-                var errors = Ember.A();
-                this.validators.forEach(function(validator) {
-                  if (validator.property === sender.property) {
-                    errors.addObjects(validator.errors);
-                  }
-                }, this);
-                set(this, 'errors.' + sender.property, errors);
-              });
-            }
-          }, parentController);
+          pushObj.addObserver('errors.[]', this, function(sender){
+            var errors = Ember.A();
+            this.validators.forEach(function(validator) {
+              if(validator.property === sender.property) {
+                errors.addObjects(validator.errors);
+              }
+              parentController.set('errors.'+aliasedKey, errors);
+            });
+          });
+
         }
       }
 
