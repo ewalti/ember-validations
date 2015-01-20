@@ -18,7 +18,7 @@ export default Base.extend({
   },
   call: function() {
     if (Ember.isBlank(get(this.model, this.property))) {
-      this.errors.pushObject(this.options.message);
+      this.errors.pushObject({subject: this.options.subject, message: this.options.message});
     }
   }
 });

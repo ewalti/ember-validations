@@ -87,7 +87,7 @@ export default Base.extend({
 
         fn = new Function('return ' + this.options.tokenizer(get(this.model, this.property)).length + ' ' + operator + ' ' + this.getValue(key));
         if (!fn()) {
-          this.errors.pushObject(this.renderMessageFor(key));
+          this.errors.pushObject({message: this.renderMessageFor(key)});
         }
       }
     }

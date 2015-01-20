@@ -62,10 +62,12 @@ export default Base.extend({
 
     if (Ember.isEmpty(get(this.model, this.property))) {
       if (this.options.allowBlank === undefined) {
-        this.errors.pushObject(this.options.messages.numericality);
+        this.errors.pushObject({subject: this.options.subject, message: this.options.message});
+        // this.errors.pushObject(this.options.messages.numericality);
       }
     } else if (!Patterns.numericality.test(get(this.model, this.property))) {
-      this.errors.pushObject(this.options.messages.numericality);
+      // this.errors.pushObject(this.options.messages.numericality);
+      this.errors.pushObject({subject: this.options.subject, message: this.options.message});
     } else if (this.options.onlyInteger === true && !(/^[+\-]?\d+$/.test(get(this.model, this.property)))) {
       this.errors.pushObject(this.options.messages.onlyInteger);
     } else if (this.options.odd  && parseInt(get(this.model, this.property), 10) % 2 === 0) {

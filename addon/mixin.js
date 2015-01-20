@@ -118,16 +118,81 @@ export default Ember.Mixin.create(setValidityMixin, {
         }
         break;
       }
-      /**/
 
       if (validator) {
         var pushObj = validator.create({model: this, property: property, options: this.validations[property][validatorName]});
         this.validators.pushObject(pushObj);
         if(parentController) {
-          parentController.validators.pushObject(pushObj);
+          // pushObj.set('pc', parentController);
+          parentController.get('validators').pushObject(pushObj);
+          // @TODO: figure out why this is flattening a promise array
+          var aliasedKey = Ember.String.camelize(this.toString().split(':')[1] + '_' + property);
+          // var newValidator = validator.create({model: parentController, property: aliasedKey, options: this.validations[property][validatorName]});
+          // parentController.validators.pushObject(newValidator);
+          // Ember.Binding.from('parentController.'+aliasedKey).to(property).connect(this);
+          //
+          // console.log('%%%%', this.toString(), this.get('model').toString());
+          console.log('pc model', this.get('model').toString());
+          this.get('model').addObserver('isDeleted', this, function(){
+            console.log('isDeleted');
+            this.validators.forEach(function(validator){
+              parentController.get('validators').removeObject(validator);
+            });
+          });
+
+          // pushObj.addObserver('errors.[]', parentController, function(sender){
+          //   // console.log('#####',sender.toString());
+          //   // console.log('$$$$$',pushObj.get('errors'));
+          //   parentController.set('errors.'+aliasedKey, pushObj.errors);
+
+          //   // if(pushObj.get('errors.length')) {
+          //   //   console.log('we have errors, pushing!');
+          //   // } else {
+          //   //   console.log('we have no errors, do something?');
+          //   // }
+          //   // console.log(parentController.get('errors'));
+          //   // console.log('po.errors',pushObj.errors);
+          //   // pushObj.errors.forEach(function(error){
+          //   //   console.log('errors', error);
+          //   // });
+          //   // console.log('++++++',pushObj.get('errors.[]'));
+          //   // var derp = parentController.get('errors.'+aliasedKey) //, pushObj.errors);
+          //   // parentController.get('errors.'+aliasedKey).pushObject(pushObj.errors);
+          //   // console.log('------derp', derp);
+          // });
+
+          // so we have a numericality validator and a presence validator.
+          // each validator is updating then setting errors to its own thingy. we need to cache these and push somehow.
+          // parentController.addObserver('validators.@each', this, function(item){
+          //   console.log('validatorsObserver', this.toString());
+          // });
+
+          // pushObj.addObserver('isDestroying', function(){
+          //   console.log('validator isDestroying');
+          // });
+
+          // console.log('$$$$$$$$$$$',parentController.toString(),this.toString());
+          parentController.validators.forEach(function(validator) {
+            if(!validator.hasObserverFor('errors.[]')) {
+              console.log(validator.toString());
+              validator.addObserver('errors.[]', this, function(sender) {
+                var errors = Ember.A();
+                this.validators.forEach(function(validator) {
+                  if (validator.property === sender.property) {
+                    errors.addObjects(validator.errors);
+                  }
+                }, this);
+                set(this, 'errors.' + sender.property, errors);
+              });
+            }
+          }, parentController);
+
+          // @TODO: fix this lazy way of triggering the validations
+          // parentController.validate();
         }
-        // this.validators.pushObject(validator.create({model: this, property: property, options: this.validations[property][validatorName]}));
       }
+      /**/
+
     };
 
     if (this.validations[property].callback) {
