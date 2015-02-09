@@ -75,6 +75,7 @@ var ArrayValidatorProxy = Ember.ArrayProxy.extend(setValidityMixin, {
 });
 
 export default Ember.Mixin.create(setValidityMixin, {
+  needs: ['application'],
   init: function() {
     this._super();
     this.errors = Errors.create();
@@ -121,31 +122,59 @@ export default Ember.Mixin.create(setValidityMixin, {
       if (validator) {
         var pushObj = validator.create({model: this, property: property, options: this.validations[property][validatorName]});
         this.validators.pushObject(pushObj);
-        if(parentController) {
-
+        if(this.attachValidationsTo) {
+          var currentRoute = this.get('controllers.application.currentRouteName').replace('.', '/'),
+              validationAttachment;
+          if(Ember.isArray(this.attachValidationsTo) && this.attachValidationsTo.indexOf(currentRoute) >= 0) {
+            var validationAttachment = this.get('controllers.application.currentRouteName').replace('.', '/');
+          } else {
+            console.log('handle non array shit');
+          }
+          var validationAttachment = this.container.lookup('controller:'+validationAttachment);
           var aliasedKey = Ember.String.camelize(this.toString().split(':')[1] + '_' + property);
-
-          parentController.get('validators').pushObject(pushObj);
-
+          validationAttachment.get('validators').pushObject(pushObj);
           // destroy validators when the model is destroyed. destroyRecord() required for this.
           this.get('model').addObserver('isDeleted', this, function(){
             console.log('isDeleted');
             this.validators.forEach(function(validator){
-              parentController.get('validators').removeObject(validator);
+              validationAttachment.get('validators').removeObject(validator);
             });
           });
-
           pushObj.addObserver('errors.[]', this, function(sender){
             var errors = Ember.A();
             this.validators.forEach(function(validator) {
               if(validator.property === sender.property) {
                 errors.addObjects(validator.errors);
               }
-              parentController.set('errors.'+aliasedKey, errors);
+              validationAttachment.set('errors.'+aliasedKey, errors);
             });
           });
-
         }
+        // if(parentController) {
+
+        //   var aliasedKey = Ember.String.camelize(this.toString().split(':')[1] + '_' + property);
+
+        //   parentController.get('validators').pushObject(pushObj);
+
+        //   // destroy validators when the model is destroyed. destroyRecord() required for this.
+        //   this.get('model').addObserver('isDeleted', this, function(){
+        //     console.log('isDeleted');
+        //     this.validators.forEach(function(validator){
+        //       parentController.get('validators').removeObject(validator);
+        //     });
+        //   });
+
+        //   pushObj.addObserver('errors.[]', this, function(sender){
+        //     var errors = Ember.A();
+        //     this.validators.forEach(function(validator) {
+        //       if(validator.property === sender.property) {
+        //         errors.addObjects(validator.errors);
+        //       }
+        //       parentController.set('errors.'+aliasedKey, errors);
+        //     });
+        //   });
+
+        // }
       }
 
     };
