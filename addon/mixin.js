@@ -127,13 +127,15 @@ export default Ember.Mixin.create(setValidityMixin, {
 
           parentController.get('validators').pushObject(pushObj);
 
-          // destroy validators when the model is destroyed. destroyRecord() required for this.
-          this.get('model').addObserver('isDeleted', this, function(){
-            console.log('isDeleted');
-            this.validators.forEach(function(validator){
-              parentController.get('validators').removeObject(validator);
+          if(this.get('model')) {
+            // destroy validators when the model is destroyed. destroyRecord() required for this.
+            this.get('model').addObserver('isDeleted', this, function(){
+              console.log('isDeleted');
+              this.validators.forEach(function(validator){
+                parentController.get('validators').removeObject(validator);
+              });
             });
-          });
+          }
 
           pushObj.addObserver('errors.[]', this, function(sender){
             var errors = Ember.A();
